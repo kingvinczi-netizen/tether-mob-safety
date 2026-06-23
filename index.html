@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tether — 3D Crew Safety</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- WebGL Canvas — fullscreen 3D background -->
+  <canvas id="gl-canvas"></canvas>
+
+  <!-- ── NAVIGATION ─────────────────────────────────────────── -->
+  <nav id="nav">
+    <div class="nav-inner">
+      <span class="nav-logo t-display">TETHER</span>
+      <div class="nav-links">
+        <a href="#features">System</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#demo" class="nav-cta">Live Demo</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── HERO ──────────────────────────────────────────────── -->
+  <section id="hero">
+    <div class="hero-content">
+      <div class="hero-tag t-mono" id="hero-status">● ALL CREW ABOARD</div>
+      <h1 class="hero-title t-display" id="hero-title">
+        The sea does not<br/>announce when it<br/>takes someone.
+      </h1>
+      <p class="hero-sub">
+        Tether is a low-cost crew band that tells your boat the moment a person goes into the water.
+        No phone. No subscription games. Just a band, a base, and a roster that is always right.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary" id="btn-hero-demo">Activate Live Demo</button>
+        <a href="#features" class="btn-ghost">How it works ↓</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-val t-mono" id="stat-crew">5</span>
+          <span class="stat-label">crew tracked</span>
+        </div>
+        <div class="stat-div"></div>
+        <div class="stat">
+          <span class="stat-val t-mono">0.4s</span>
+          <span class="stat-label">detection time</span>
+        </div>
+        <div class="stat-div"></div>
+        <div class="stat">
+          <span class="stat-val t-mono">2km</span>
+          <span class="stat-label">base range</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3D sonar overlay label -->
+    <div class="sonar-label" id="sonar-label">
+      <span class="t-mono">SONAR SWEEP</span>
+      <span class="t-mono mist" id="sonar-coords">24°13'N  38°05'W</span>
+    </div>
+
+    <div class="scroll-hint" id="scroll-hint">
+      <div class="scroll-line"></div>
+      <span class="t-mono">SCROLL</span>
+    </div>
+  </section>
+
+  <!-- ── FEATURES ──────────────────────────────────────────── -->
+  <section id="features" class="section-dark">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow t-mono">HOW IT WORKS</p>
+        <h2 class="t-display section-title">Three steps.<br/>No dependencies.</h2>
+      </div>
+      <div class="features-grid">
+        <div class="feat-card reveal" data-delay="0">
+          <div class="feat-num t-mono">01</div>
+          <div class="feat-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="24" cy="24" r="10" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M24 4C24 4 36 14 36 24C36 34 24 44 24 44C24 44 12 34 12 24C12 14 24 4 24 4Z" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M4 24H44" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <h3 class="feat-title">Band detects water.</h3>
+          <p class="feat-body">Each crew member wears a cheap band. Two contacts complete a circuit the instant they hit the sea.</p>
+        </div>
+        <div class="feat-card reveal" data-delay="100">
+          <div class="feat-num t-mono">02</div>
+          <div class="feat-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24 8L24 40" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M8 24C8 24 12 16 24 16C36 16 40 24 40 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M4 24C4 24 10 8 24 8C38 8 44 24 44 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+              <circle cx="24" cy="24" r="4" fill="currentColor"/>
+            </svg>
+          </div>
+          <h3 class="feat-title">Base confirms separation.</h3>
+          <p class="feat-body">Wet band plus a dropping signal means someone is in the water and moving away. Two conditions — so a splash does not cry wolf.</p>
+        </div>
+        <div class="feat-card reveal" data-delay="200">
+          <div class="feat-num t-mono">03</div>
+          <div class="feat-icon">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24 4L28 20H44L31 29L36 44L24 35L12 44L17 29L4 20H20L24 4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="feat-title">Boat and shore are told.</h3>
+          <p class="feat-body">Alarm sounds. The spot is marked on GPS. A message goes to a contact onshore over cellular or satellite.</p>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-row reveal">
+        <div class="stat-block">
+          <span class="stat-block-val t-mono t-display">$35</span>
+          <span class="stat-block-label">per band</span>
+        </div>
+        <div class="stat-block">
+          <span class="stat-block-val t-mono t-display">72h</span>
+          <span class="stat-block-label">battery life</span>
+        </div>
+        <div class="stat-block">
+          <span class="stat-block-val t-mono t-display">IP68</span>
+          <span class="stat-block-label">waterproof rating</span>
+        </div>
+        <div class="stat-block">
+          <span class="stat-block-val t-mono t-display">∞</span>
+          <span class="stat-block-label">no monthly fee</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── DASHBOARD / DEMO ───────────────────────────────────── -->
+  <section id="dashboard" class="section-panel">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow t-mono">LIVE DASHBOARD DEMO</p>
+        <h2 class="t-display section-title">What the crew sees.</h2>
+        <p class="section-sub">A live roster, battery on every band, and the last place each person was heard. Built to be glanced at, not studied.</p>
+      </div>
+
+      <!-- Dashboard UI -->
+      <div class="dashboard reveal" id="dash-panel">
+
+        <!-- Alarm banner -->
+        <div class="alarm-banner" id="alarm-banner" role="alert" aria-live="assertive">
+          <div class="alarm-banner-inner">
+            <span class="alarm-icon">⚠</span>
+            <span id="alarm-text">MAN OVERBOARD — Tunde A. — Position marked — Shore alerted</span>
+            <span class="alarm-blink t-mono">ALERT ACTIVE</span>
+          </div>
+        </div>
+
+        <div class="dash-body">
+          <!-- Mini sonar -->
+          <div class="dash-sonar-col">
+            <div class="dash-sonar-wrap">
+              <canvas id="mini-sonar" aria-label="2D sonar display" role="img"></canvas>
+              <div class="sonar-overlay-text">
+                <span class="t-mono mist" id="sonar-depth">DEPTH 840m</span>
+              </div>
+            </div>
+            <div class="dash-controls">
+              <button class="btn-simulate" id="btn-mob" type="button">
+                <span class="btn-dot"></span>
+                Simulate man overboard
+              </button>
+              <button class="btn-standdown" id="btn-standdown" type="button">
+                ✓ Stand down
+              </button>
+            </div>
+          </div>
+
+          <!-- Roster -->
+          <div class="dash-roster-col">
+            <div class="roster-header">
+              <span class="t-mono mist">CREW ROSTER</span>
+              <span class="t-mono mist" id="roster-count">5 / 5 aboard</span>
+            </div>
+            <div id="roster-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WHY DIFFERENT ─────────────────────────────────────── -->
+  <section id="why" class="section-dark">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow t-mono">WHY TETHER</p>
+        <h2 class="t-display section-title">Built different.</h2>
+      </div>
+      <div class="why-grid">
+        <div class="why-card reveal" data-delay="0">
+          <p>Cheap enough to put one on every person. The brains live on the boat, not the band.</p>
+        </div>
+        <div class="why-card reveal" data-delay="100">
+          <p>Knows the whole crew, not just one hero with a gadget. Headcount in, headcount out.</p>
+        </div>
+        <div class="why-card reveal" data-delay="200">
+          <p>Works with no phone and no monthly fee to stay alive.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ────────────────────────────────────────────── -->
+  <footer>
+    <div class="container footer-inner">
+      <span class="footer-brand t-display">TETHER</span>
+      <p class="footer-disc">A student project exploring low-cost marine safety. <strong>Not a certified safety device.</strong></p>
+      <p class="footer-attr t-mono">[Your Name] / [Matric No] / DAT620 / Paul Oamen &amp; Nwachukwu Ujubuonu</p>
+    </div>
+  </footer>
+
+  <!-- Three.js r158 + GSAP from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
