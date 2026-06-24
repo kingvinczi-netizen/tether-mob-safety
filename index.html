@@ -213,6 +213,107 @@
     </div>
   </section>
 
+  <!-- ── MOB CINEMATIC (fall replay) ───────────────────────── -->
+  <div id="mob-cine" class="mob-cine" aria-hidden="true">
+    <div class="cine-stage">
+      <svg id="cine-svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="cineSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0"    stop-color="#0a2230"/>
+            <stop offset="1"    stop-color="#0d3344"/>
+          </linearGradient>
+          <linearGradient id="cineWater" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0"    stop-color="#0d5566"/>
+            <stop offset="0.35" stop-color="#0a3a4a"/>
+            <stop offset="1"    stop-color="#03161f"/>
+          </linearGradient>
+          <radialGradient id="cineSun" cx="0.5" cy="0" r="0.9">
+            <stop offset="0"   stop-color="#7fe8da" stop-opacity="0.55"/>
+            <stop offset="0.5" stop-color="#2f8f96" stop-opacity="0.12"/>
+            <stop offset="1"   stop-color="#2f8f96" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="cineWaterClip"><rect x="0" y="430" width="1200" height="270"/></clipPath>
+        </defs>
+
+        <!-- sky / horizon -->
+        <rect x="0" y="0" width="1200" height="460" fill="url(#cineSky)"/>
+        <ellipse cx="600" cy="60" rx="520" ry="320" fill="url(#cineSun)"/>
+
+        <!-- water body -->
+        <rect x="0" y="430" width="1200" height="270" fill="url(#cineWater)"/>
+
+        <!-- god-ray shafts under the surface -->
+        <g clip-path="url(#cineWaterClip)" opacity="0.5">
+          <polygon class="cine-ray" points="520,430 560,430 470,700 380,700" fill="#7fe8da" opacity="0.10"/>
+          <polygon class="cine-ray" points="640,430 690,430 760,700 660,700" fill="#7fe8da" opacity="0.08"/>
+          <polygon class="cine-ray" points="760,430 800,430 900,700 820,700" fill="#7fe8da" opacity="0.06"/>
+        </g>
+
+        <!-- caustic shimmer band just under surface -->
+        <g clip-path="url(#cineWaterClip)" class="cine-caustic" opacity="0.35"></g>
+
+        <!-- animated surface waterline -->
+        <path id="cine-surface" d="M0,432 Q150,420 300,432 T600,432 T900,432 T1200,432 V470 H0 Z"
+              fill="#0e6072" opacity="0.85"/>
+
+        <!-- boat deck (upper-left) -->
+        <g id="cine-boat">
+          <path d="M-20,300 L470,300 L520,360 L-20,360 Z" fill="#11313c"/>
+          <rect x="-20" y="294" width="500" height="10" fill="#1f5562"/>
+          <!-- railing -->
+          <line x1="40"  y1="250" x2="40"  y2="300" stroke="#2f7a86" stroke-width="6"/>
+          <line x1="160" y1="248" x2="160" y2="300" stroke="#2f7a86" stroke-width="6"/>
+          <line x1="280" y1="250" x2="280" y2="300" stroke="#2f7a86" stroke-width="6"/>
+          <line x1="400" y1="252" x2="400" y2="300" stroke="#2f7a86" stroke-width="6"/>
+          <path d="M20,252 Q210,238 420,254" stroke="#3a93a0" stroke-width="7" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- the person -->
+        <g id="cine-faller" transform="translate(360,210)">
+          <g transform="translate(-18,-46)">
+            <circle cx="18" cy="10" r="11" fill="#e8f4f2"/>                 <!-- head -->
+            <rect x="8"  y="22" width="20" height="34" rx="9" fill="#cfe7e3"/> <!-- torso -->
+            <rect x="2"  y="26" width="9"  height="26" rx="4.5" fill="#bcdcd7" transform="rotate(18 6 28)"/>  <!-- arm -->
+            <rect x="25" y="26" width="9"  height="26" rx="4.5" fill="#bcdcd7" transform="rotate(-22 29 28)"/><!-- arm -->
+            <rect x="10" y="52" width="9"  height="28" rx="4.5" fill="#a9d0cb"/> <!-- leg -->
+            <rect x="19" y="52" width="9"  height="28" rx="4.5" fill="#a9d0cb"/> <!-- leg -->
+            <!-- the Tether band -->
+            <rect x="0" y="44" width="11" height="6" rx="3" fill="#4FD1C5" transform="rotate(18 6 47)"/>
+          </g>
+        </g>
+
+        <!-- splash + ripples (hidden until impact) -->
+        <g id="cine-splash" opacity="0">
+          <circle class="cine-ripple" cx="430" cy="436" r="10" fill="none" stroke="#bdeee7" stroke-width="3"/>
+          <circle class="cine-ripple" cx="430" cy="436" r="10" fill="none" stroke="#7fe8da" stroke-width="2"/>
+          <g id="cine-droplets"></g>
+        </g>
+
+        <!-- distress beacon (appears after float) -->
+        <g id="cine-beacon" opacity="0">
+          <circle class="cine-beacon-pulse" cx="430" cy="452" r="14" fill="none" stroke="#FF5A4D" stroke-width="3"/>
+          <circle cx="430" cy="452" r="6" fill="#FF5A4D"/>
+        </g>
+      </svg>
+
+      <!-- HUD overlay -->
+      <div class="cine-hud">
+        <div class="cine-top">
+          <span class="cine-rec"><span class="cine-rec-dot"></span>MOB EVENT · LIVE REPLAY</span>
+          <span class="cine-clock t-mono" id="cine-clock">T+0.0s</span>
+        </div>
+        <div class="cine-stamp t-display" id="cine-stamp">MAN OVERBOARD</div>
+        <div class="cine-lower">
+          <div class="cine-caption t-mono" id="cine-caption">Crew member at rail — TB-01 · Tunde A.</div>
+          <div class="cine-actions" id="cine-actions">
+            <button class="cine-btn cine-btn-primary" id="cine-continue" type="button">Open live dashboard →</button>
+            <button class="cine-btn" id="cine-replay" type="button">↻ Replay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── FOOTER ────────────────────────────────────────────── -->
   <footer>
     <div class="container footer-inner">

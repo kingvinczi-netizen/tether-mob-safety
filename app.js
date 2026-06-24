@@ -89,14 +89,30 @@ const OCEAN_FRAG = /* glsl */`
   varying float vH;
   varying vec2  vUV;
 
+  // Domain-warped caustic web — the dancing net of light on real water.
+  float caustic(vec2 uv) {
+    vec2 p = uv * 7.0;
+    float t = uTime * 0.55;
+    // Warp the space a few times so the cells writhe like refracted light
+    for (int i = 0; i < 3; i++) {
+      float fi = float(i) + 1.0;
+      p += vec2(
+        sin(p.y * 1.5 + t * (0.9 / fi)),
+        cos(p.x * 1.5 + t * (0.8 / fi))
+      ) * (0.55 / fi);
+    }
+    float c = (sin(p.x) * sin(p.y)) * 0.5 + 0.5;
+    return pow(c, 4.0);            // sharpen into bright threads
+  }
+
   void main() {
     // Normalise wave height 0→1
     float h = clamp((vH + 1.8) / 3.6, 0.0, 1.0);
 
-    // Base ocean: abyss → mid → crest
-    vec3 deep  = vec3(0.024, 0.090, 0.130);
-    vec3 mid   = vec3(0.040, 0.185, 0.245);
-    vec3 crest = vec3(0.095, 0.365, 0.392);
+    // Base ocean — deep navy abyss → teal mid → bright cyan crest
+    vec3 deep  = vec3(0.012, 0.066, 0.118);
+    vec3 mid   = vec3(0.035, 0.205, 0.290);
+    vec3 crest = vec3(0.120, 0.470, 0.510);
     vec3 col   = mix(deep, mid,   smoothstep(0.00, 0.62, h));
         col    = mix(col,  crest, smoothstep(0.55, 1.00, h));
 
@@ -105,16 +121,29 @@ const OCEAN_FRAG = /* glsl */`
     vec3 alarmC = vec3(0.400, 0.082, 0.065);
     col = mix(col, mix(alarmD, alarmC, h), uAlarm * 0.58);
 
-    // Foam at crests
-    float foam    = smoothstep(0.78, 1.00, h) * 0.30;
-    vec3 foamTint = mix(vec3(0.31, 0.82, 0.77), vec3(1.0, 0.52, 0.40), uAlarm);
-    col += foam * foamTint;
+    vec3 lightTint = mix(vec3(0.42, 0.92, 0.86), vec3(1.0, 0.46, 0.34), uAlarm);
 
-    // Caustic shimmer lines
-    float sh = sin(vUV.x * 26.0 + uTime * 1.9)
-             * sin(vUV.y * 22.0 - uTime * 1.5);
-    col += clamp(sh * 0.065, 0.0, 0.065)
-         * mix(vec3(0.31, 0.82, 0.77), vec3(1.0, 0.42, 0.30), uAlarm);
+    // Animated caustic light-web — two layers drifting opposite ways
+    float ca = caustic(vUV * 1.0 + vec2(uTime * 0.012, uTime * 0.020));
+    float cb = caustic(vUV * 1.7 - vec2(uTime * 0.018, uTime * 0.009));
+    float caust = ca * 0.7 + cb * 0.4;
+    // Brighter in the crests, present everywhere
+    col += caust * lightTint * (0.10 + h * 0.32);
+
+    // Foam at crests
+    float foam = smoothstep(0.80, 1.00, h) * 0.28;
+    col += foam * lightTint;
+
+    // Travelling specular sparkle — tiny sun glints riding the surface
+    float spk = pow(max(0.0, sin(vUV.x * 90.0 + uTime * 2.3)
+                           * sin(vUV.y * 70.0 - uTime * 1.7)), 18.0);
+    col += spk * smoothstep(0.45, 1.0, h) * lightTint * 0.9;
+
+    // God-ray shafts — light raking across from the far side
+    float shaftAng = (vUV.x - vUV.y) * 4.2 + uTime * 0.25;
+    float shafts   = pow(max(0.0, sin(shaftAng)), 6.0);
+    shafts        *= smoothstep(0.0, 0.7, vUV.y);   // strongest toward the horizon
+    col += shafts * lightTint * (0.05 * (1.0 - uAlarm * 0.6));
 
     // Radial vignette — pool-of-light in deep water
     float vig = 1.0 - length(vUV - 0.5) * 1.12;
@@ -122,9 +151,9 @@ const OCEAN_FRAG = /* glsl */`
 
     // Edge fog
     float edge = length(vUV - 0.5) * 2.0;
-    col = mix(col, vec3(0.024, 0.050, 0.063), smoothstep(0.72, 1.00, edge));
+    col = mix(col, vec3(0.020, 0.044, 0.060), smoothstep(0.72, 1.00, edge));
 
-    gl_FragColor = vec4(col, 0.95);
+    gl_FragColor = vec4(col, 0.97);
   }
 `;
 
@@ -714,6 +743,188 @@ function tick() {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   MOB CINEMATIC — the "person falls overboard" replay
+   ══════════════════════════════════════════════════════════════ */
+const SVGNS = 'http://www.w3.org/2000/svg';
+let cineTL = null;
+let cineBeaconTween = null;
+let cineOnContinue = null;
+
+function el(id) { return document.getElementById(id); }
+
+function startBeaconPulse() {
+  stopBeaconPulse();
+  cineBeaconTween = gsap.fromTo('.cine-beacon-pulse',
+    { attr: { r: 8 }, opacity: 0.9 },
+    { attr: { r: 40 }, opacity: 0, duration: 1.1, ease: 'power2.out', repeat: -1 });
+}
+function stopBeaconPulse() {
+  if (cineBeaconTween) { cineBeaconTween.kill(); cineBeaconTween = null; }
+}
+
+function seedCaustics() {
+  /* Faint wavy light bands drifting just under the surface */
+  const g = document.querySelector('.cine-caustic');
+  if (!g || g.childNodes.length) return;
+  for (let i = 0; i < 5; i++) {
+    const y = 460 + i * 42;
+    const p = document.createElementNS(SVGNS, 'path');
+    p.setAttribute('d', `M0,${y} Q300,${y - 14} 600,${y} T1200,${y}`);
+    p.setAttribute('stroke', '#8af0e4');
+    p.setAttribute('stroke-width', '2');
+    p.setAttribute('fill', 'none');
+    p.setAttribute('opacity', (0.10 - i * 0.012).toFixed(3));
+    g.appendChild(p);
+    if (typeof gsap !== 'undefined' && !REDUCED) {
+      gsap.to(p, { attr: { d: `M0,${y + 6} Q300,${y + 16} 600,${y + 4} T1200,${y + 8}` },
+        duration: 3 + i * 0.4, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+    }
+  }
+}
+
+function spawnDroplets() {
+  const g = el('cine-droplets');
+  if (!g) return;
+  g.innerHTML = '';
+  const drops = [];
+  for (let i = 0; i < 16; i++) {
+    const c = document.createElementNS(SVGNS, 'circle');
+    c.setAttribute('cx', 430);
+    c.setAttribute('cy', 434);
+    c.setAttribute('r', 2 + Math.random() * 4);
+    c.setAttribute('fill', i % 3 === 0 ? '#ffffff' : '#bdeee7');
+    g.appendChild(c);
+    drops.push(c);
+  }
+  return drops;
+}
+
+function resetCineScene() {
+  if (typeof gsap === 'undefined') return;
+  stopBeaconPulse();
+  gsap.set('#cine-faller', { x: 360, y: 210, rotation: 0, opacity: 1, transformOrigin: '50% 50%' });
+  gsap.set('#cine-splash', { opacity: 0 });
+  gsap.set('#cine-beacon', { opacity: 0, scale: 1 });
+  gsap.set('#cine-stamp',  { opacity: 0, scale: 1.4 });
+  gsap.set('.cine-ripple', { attr: { r: 8 }, opacity: 0 });
+  gsap.set('#cine-boat',   { y: 0 });
+  gsap.set('#cine-actions', {});
+  el('cine-actions').classList.remove('show');
+  el('cine-caption').classList.remove('alarm');
+  el('cine-clock').textContent = 'T+0.0s';
+  el('cine-caption').textContent = 'Crew member at rail — TB-01 · Tunde A.';
+}
+
+function buildCineTimeline() {
+  const drops = spawnDroplets();
+  const clock = { t: 0 };
+  const setCap = (txt, alarm) => {
+    el('cine-caption').textContent = txt;
+    el('cine-caption').classList.toggle('alarm', !!alarm);
+  };
+
+  const tl = gsap.timeline({
+    onComplete() {
+      el('cine-actions').classList.add('show');
+    },
+  });
+
+  /* Running mission clock 0 → 3.4s */
+  tl.to(clock, {
+    t: 3.4, duration: 3.4, ease: 'none',
+    onUpdate() { el('cine-clock').textContent = `T+${clock.t.toFixed(1)}s`; },
+  }, 0);
+
+  /* Gentle boat bob throughout */
+  tl.to('#cine-boat', { y: 6, duration: 1.4, repeat: 3, yoyo: true, ease: 'sine.inOut' }, 0);
+
+  /* Teeter at the rail */
+  tl.to('#cine-faller', { rotation: -14, duration: 0.45, ease: 'sine.inOut' }, 0.35)
+    .add(() => setCap('Loses balance at the rail…'), 0.55);
+
+  /* THE FALL — gravity accelerates them down + outboard, tumbling */
+  tl.to('#cine-faller', {
+    x: 430, y: 432, rotation: 196, duration: 1.05, ease: 'power1.in',
+  }, 0.85);
+
+  /* IMPACT */
+  tl.add(() => {
+    setCap('Hits the water — band wetted, circuit closes.');
+    gsap.set('#cine-splash', { opacity: 1 });
+    /* ripples */
+    gsap.fromTo('.cine-ripple',
+      { attr: { r: 8 }, opacity: 0.9 },
+      { attr: { r: 130 }, opacity: 0, duration: 1.6, ease: 'power2.out', stagger: 0.18, repeat: 1 });
+    /* droplets burst */
+    if (drops) drops.forEach((d, i) => {
+      const ang = (-Math.PI) * (0.15 + Math.random() * 0.7);
+      const spd = 40 + Math.random() * 90;
+      gsap.fromTo(d, { x: 0, y: 0, opacity: 1 }, {
+        x: Math.cos(ang) * spd, y: Math.sin(ang) * spd - 20,
+        opacity: 0, duration: 0.7 + Math.random() * 0.4, ease: 'power2.out',
+      });
+      gsap.to(d, { y: '+=120', duration: 0.9, ease: 'power1.in', delay: 0.2 });
+    });
+    /* surface jolt */
+    gsap.fromTo('#cine-surface', { attr: { d: 'M0,432 Q150,420 300,432 T600,432 T900,432 T1200,432 V470 H0 Z' },
+      opacity: 1 },
+      { attr: { d: 'M0,432 Q150,448 300,430 T600,440 T900,428 T1200,434 V470 H0 Z' },
+        duration: 0.5, yoyo: true, repeat: 3, ease: 'sine.inOut' });
+  }, 1.85);
+
+  /* Submerge, then bob up to float */
+  tl.to('#cine-faller', { y: 474, rotation: 250, opacity: 0.35, duration: 0.5, ease: 'power1.in' }, 1.95)
+    .to('#cine-faller', { y: 452, opacity: 0.8, duration: 0.7, ease: 'power2.out' }, 2.45);
+
+  /* Distress beacon + stamp.  The infinite pulse runs as its OWN tween so it
+     never blocks the timeline from completing (which is what fires the buttons). */
+  tl.to('#cine-beacon', { opacity: 1, duration: 0.3 }, 2.55)
+    .call(() => {
+      setCap('MAN OVERBOARD confirmed — alarm sounded, GPS marked, shore alerted.', true);
+      startBeaconPulse();
+    }, null, 2.6)
+    .to('#cine-stamp', { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(2)' }, 2.6)
+    .fromTo('#cine-stamp', { x: -6 }, { x: 6, duration: 0.06, repeat: 7, yoyo: true, ease: 'none' }, 2.6);
+
+  return tl;
+}
+
+function playCinematic(onContinue) {
+  cineOnContinue = onContinue || null;
+  const overlay = el('mob-cine');
+  if (!overlay) { if (onContinue) onContinue(); return; }
+
+  /* Reduced motion or no GSAP — skip straight to the live dashboard MOB */
+  if (REDUCED || typeof gsap === 'undefined') {
+    if (onContinue) onContinue();
+    return;
+  }
+
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  gsap.to(overlay, { opacity: 1, duration: 0.4, ease: 'power2.out' });
+
+  seedCaustics();
+  resetCineScene();
+  if (cineTL) cineTL.kill();
+  cineTL = buildCineTimeline();
+}
+
+function closeCinematic() {
+  const overlay = el('mob-cine');
+  if (!overlay) return;
+  if (cineTL) cineTL.kill();
+  stopBeaconPulse();
+  gsap.to(overlay, {
+    opacity: 0, duration: 0.35, ease: 'power2.in',
+    onComplete() {
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+    },
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
    BOOT
    ══════════════════════════════════════════════════════════════ */
 function boot() {
@@ -730,11 +941,32 @@ function boot() {
 
   initAnimations();
 
-  document.getElementById('btn-mob').addEventListener('click', triggerMOB);
+  /* Dashboard "simulate" — play the fall replay, then arm the live dashboard */
+  document.getElementById('btn-mob').addEventListener('click', () => {
+    playCinematic(triggerMOB);
+  });
   document.getElementById('btn-standdown').addEventListener('click', standDown);
+
+  /* Hero "Activate Live Demo" — replay, then hand off to the dashboard */
   document.getElementById('btn-hero-demo').addEventListener('click', () => {
-    document.getElementById('dashboard').scrollIntoView({ behavior: 'smooth' });
-    setTimeout(triggerMOB, 750);
+    playCinematic(() => {
+      document.getElementById('dashboard').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(triggerMOB, 650);
+    });
+  });
+
+  /* Cinematic controls */
+  const cont = document.getElementById('cine-continue');
+  const rep  = document.getElementById('cine-replay');
+  if (cont) cont.addEventListener('click', () => {
+    closeCinematic();
+    if (cineOnContinue) cineOnContinue();
+  });
+  if (rep) rep.addEventListener('click', () => {
+    resetCineScene();
+    if (cineTL) cineTL.kill();
+    cineTL = buildCineTimeline();
+    document.getElementById('cine-actions').classList.remove('show');
   });
 }
 

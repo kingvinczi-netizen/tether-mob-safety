@@ -8,3 +8,5 @@ Thumbs.db
 
 # Dependencies (none currently, but just in case)
 node_modules/
+
+.vercel
