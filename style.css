@@ -302,13 +302,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ── Sections ────────────────────────────────────────────────── */
+/* Sharp footage behind every section — no blur, only a light veil
+   so the diving water stays crisp like the hero. */
 .section-dark {
   position: relative;
   z-index: 1;
   padding: 8rem 0;
-  background: rgba(6, 13, 16, 0.55);
-  backdrop-filter: blur(10px) saturate(1.1);
-  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  background: rgba(5, 12, 16, 0.34);
   border-top: 1px solid rgba(27,58,69,0.5);
 }
 
@@ -316,9 +316,7 @@ a { color: inherit; text-decoration: none; }
   position: relative;
   z-index: 1;
   padding: 8rem 0;
-  background: rgba(8, 16, 20, 0.62);
-  backdrop-filter: blur(14px) saturate(1.1);
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  background: rgba(6, 14, 18, 0.40);
   border-top: 1px solid rgba(27,58,69,0.5);
 }
 
@@ -329,20 +327,23 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.14em;
   color: var(--ping);
   margin-bottom: 1rem;
+  text-shadow: 0 1px 12px rgba(2, 8, 11, 0.7);
 }
 
 .section-title {
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1.1;
   color: var(--foam);
+  text-shadow: 0 2px 26px rgba(2, 8, 11, 0.62);
 }
 
 .section-sub {
   font-size: 1.125rem;
-  color: var(--mist);
+  color: #c3d4da;
   max-width: 50ch;
   margin-top: 1rem;
   line-height: 1.7;
+  text-shadow: 0 1px 14px rgba(2, 8, 11, 0.7);
 }
 
 /* ── Reveal animation ────────────────────────────────────────── */
@@ -370,7 +371,6 @@ a { color: inherit; text-decoration: none; }
   flex-direction: column;
   gap: 1.25rem;
   transition: border-color 0.3s, transform 0.3s;
-  backdrop-filter: blur(4px);
   position: relative;
   overflow: hidden;
   isolation: isolate;
