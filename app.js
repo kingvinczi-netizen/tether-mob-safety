@@ -41,7 +41,55 @@ const MOB_DRIFT = 0.0000009; // degrees/second ≈ 0.3 kts bearing ~214° SW
 const blipDrift = CREW.map(() => ({ ox:0, oy:0, vx:0, vy:0 }));
 
 /* ══════════════════════════════════════════════════════════════
-   THREE.JS — GPU OCEAN
+   BACKGROUND SEA VIDEO — scrolling dives from surface → reef
+   ══════════════════════════════════════════════════════════════ */
+function setupBgVideo() {
+  const v = document.getElementById('bg-video');
+  if (!v) return;
+
+  v.muted = true;
+  v.playsInline = true;
+  const tryPlay = () => { const p = v.play(); if (p) p.catch(() => {}); };
+  tryPlay();
+  /* Some browsers block autoplay until a gesture — prime on first interaction */
+  window.addEventListener('pointerdown', tryPlay, { once: true });
+  window.addEventListener('scroll',      tryPlay, { once: true, passive: true });
+
+  if (REDUCED) { v.pause(); v.style.objectPosition = 'center 45%'; return; }
+
+  /* Map page scroll → vertical crop: surface near the top → reef near the bottom */
+  const TOP = 6, BOTTOM = 94;
+  let target = 0, current = 0;
+  function onScroll() {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    target = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  onScroll();
+  current = target;
+
+  (function pan() {
+    requestAnimationFrame(pan);
+    current += (target - current) * 0.09;
+    v.style.objectPosition = `center ${(TOP + current * (BOTTOM - TOP)).toFixed(2)}%`;
+  })();
+}
+
+/* Blood-water tint over the footage during an alarm */
+function setAlarm(on) {
+  const tint = document.getElementById('bg-tint');
+  if (!tint) return;
+  if (typeof gsap !== 'undefined') {
+    gsap.to(tint, { opacity: on ? 1 : 0, duration: on ? 1.6 : 2.2, ease: 'power2.out' });
+  } else {
+    tint.style.opacity = on ? '1' : '0';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THREE.JS — GPU OCEAN  (legacy; definitions kept but no longer
+   initialised — the sea video replaces the 3D background)
    ══════════════════════════════════════════════════════════════ */
 
 const glCanvas = document.getElementById('gl-canvas');
@@ -663,8 +711,8 @@ function triggerMOB() {
   mobSeconds   = 0;
   mobGPS       = { lat: 24.1312, lon: 38.0521 };
 
-  /* Smooth water → blood using GSAP */
-  gsap.to(wUniforms.uAlarm, { value: 1, duration: 1.8, ease: 'power2.out' });
+  /* Sea video → blood-water tint */
+  setAlarm(true);
 
   /* UI */
   document.getElementById('alarm-banner').classList.add('visible');
@@ -687,8 +735,8 @@ function standDown() {
   blipDrift[0].ox = 0; blipDrift[0].oy = 0;
   blipDrift[0].vx = 0; blipDrift[0].vy = 0;
 
-  /* Water fades back to teal */
-  gsap.to(wUniforms.uAlarm, { value: 0, duration: 2.4, ease: 'power2.out' });
+  /* Tint fades back out */
+  setAlarm(false);
 
   /* Reset 3D blip position */
   if (sonarSphere) {
@@ -928,8 +976,7 @@ function closeCinematic() {
    BOOT
    ══════════════════════════════════════════════════════════════ */
 function boot() {
-  initThree();
-  renderLoop();
+  setupBgVideo();
 
   resizeMini();
   miniLoop();

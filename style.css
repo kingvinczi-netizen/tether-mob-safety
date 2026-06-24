@@ -2,7 +2,7 @@
    TETHER 3D — style.css
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,400..500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ── Tokens ─────────────────────────────────────────────────── */
 :root {
@@ -16,9 +16,12 @@
   --mist:   #7B96A0;
   --alarm:  #FF5A4D;
 
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body:    'Inter', sans-serif;
-  --font-mono:    'JetBrains Mono', monospace;
+  /* Editorial New (Pangram Pangram) — Fraunces is the free stand-in.
+     Drop real PP Editorial New .woff2 into /fonts + @font-face to swap. */
+  --font-display:   'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-editorial: 'Fraunces', Georgia, serif;
+  --font-body:      'Inter', sans-serif;
+  --font-mono:      'JetBrains Mono', monospace;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -45,19 +48,51 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ── Utility ─────────────────────────────────────────────────── */
-.t-display { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; }
+.t-display { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.015em; }
 .t-mono    { font-family: var(--font-mono); }
 .mist      { color: var(--mist); }
 .container { max-width: 1120px; margin: 0 auto; padding: 0 2rem; }
 
-/* ── WebGL Canvas ────────────────────────────────────────────── */
-#gl-canvas {
+/* ── Background sea video ────────────────────────────────────── */
+#bg-video {
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  object-position: center 6%;
   z-index: 0;
   pointer-events: none;
+  will-change: object-position;
+}
+
+/* Legibility scrim — darker top & bottom, lighter middle */
+#bg-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(3, 11, 16, 0.78) 0%,
+    rgba(3, 11, 16, 0.32) 20%,
+    rgba(3, 11, 16, 0.30) 64%,
+    rgba(3, 11, 16, 0.82) 100%
+  );
+}
+
+/* Blood-water alarm tint (opacity driven by JS) */
+#bg-tint {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(255, 60, 48, 0.34) 0%, transparent 62%),
+    linear-gradient(180deg, rgba(120, 12, 9, 0.40), rgba(48, 5, 4, 0.55));
+  mix-blend-mode: multiply;
+  transition: opacity 0.3s linear;
 }
 
 /* ── Nav ─────────────────────────────────────────────────────── */
@@ -144,22 +179,24 @@ a { color: inherit; text-decoration: none; }
 .hero-tag.alarm-tag { color: var(--alarm); }
 
 .hero-title {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  line-height: 1.05;
+  font-size: clamp(2.6rem, 6.2vw, 4.7rem);
+  line-height: 1.04;
   color: var(--foam);
   opacity: 0;
   transform: translateY(30px);
+  text-shadow: 0 2px 30px rgba(2, 8, 11, 0.55);
 }
 
 .hero-title .alarm-word { color: var(--alarm); }
 
 .hero-sub {
   font-size: 1.125rem;
-  color: var(--mist);
+  color: #c3d4da;
   max-width: 46ch;
   line-height: 1.7;
   opacity: 0;
   transform: translateY(20px);
+  text-shadow: 0 1px 16px rgba(2, 8, 11, 0.6);
 }
 
 .hero-actions {
@@ -269,8 +306,9 @@ a { color: inherit; text-decoration: none; }
   position: relative;
   z-index: 1;
   padding: 8rem 0;
-  background: rgba(6, 13, 16, 0.92);
-  backdrop-filter: blur(8px);
+  background: rgba(6, 13, 16, 0.55);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
   border-top: 1px solid rgba(27,58,69,0.5);
 }
 
@@ -278,8 +316,9 @@ a { color: inherit; text-decoration: none; }
   position: relative;
   z-index: 1;
   padding: 8rem 0;
-  background: rgba(10, 20, 24, 0.95);
-  backdrop-filter: blur(12px);
+  background: rgba(8, 16, 20, 0.62);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
   border-top: 1px solid rgba(27,58,69,0.5);
 }
 
@@ -748,6 +787,14 @@ footer {
 .footer-brand { font-size: 1.5rem; letter-spacing: 0.12em; }
 .footer-disc  { font-size: 0.875rem; color: var(--mist); max-width: 50ch; line-height: 1.6; }
 .footer-attr  { font-size: 0.75rem; color: var(--mist); }
+.footer-gh {
+  font-size: 0.75rem;
+  color: var(--ping);
+  border-bottom: 1px solid transparent;
+  width: fit-content;
+  transition: border-color 0.2s, color 0.2s;
+}
+.footer-gh:hover { color: var(--foam); border-bottom-color: var(--ping); }
 
 /* ── Section crystal water background glow ───────────────────── */
 .section-dark::after,
